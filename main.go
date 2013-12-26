@@ -27,11 +27,11 @@ func loadPage(title string) (*Page, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/view/"):]
+	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title)
 	
 	if err != nil {
-		http.Redirect(w, r, "/view/index", http.StatusFound)
+		http.Redirect(w, r, "/index", http.StatusFound)
 		return
 	}
 
@@ -40,7 +40,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/view/", viewHandler)
+	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
 }
 
