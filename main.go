@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
+//	"fmt"
 	"io/ioutil"
 	"net/http"
+	"html/template"
 )
 
 type Page struct {
@@ -30,10 +31,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	p, err := loadPage(title)
 	
 	if err != nil {
-		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
+		http.Redirect(w, r, "/view/index", http.StatusFound)
 		return
 	}
-	renderTemplate(w, "view", p)
+
+	t, _ := template.ParseFiles("view.html")
+	t.Execute(w, p)
 }
 
 func main() {
