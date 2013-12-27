@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"neptune/user"
 )
 
 type Page struct {
@@ -124,7 +126,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if len(usr.Password) > 0 {
 		ok := checkCredentials(usr.Email, usr.Password)
 		if ok {
-			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
+			user.CreateUserFile(usr.Email)
+			s := "/accounts/" + usr.Email
+			http.Redirect(w, r, s, http.StatusFound)
 		} else {
 			http.Redirect(w, r, "/login-failed", http.StatusFound)
 		}
