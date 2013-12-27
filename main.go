@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+
 	"io/ioutil"
 	"net/http"
 	"html/template"
@@ -11,12 +14,21 @@ import (
 
 type Page struct {
 	Title string
-	Body template.HTML
+	Body  template.HTML
 }
 
-type User struct {
-	Email string
-	Password string
+func SHA(str string)(string){
+
+	var bytes []byte
+	//var n int32
+    //binary.Read(rand.Reader, binary.LittleEndian, &n)
+
+	copy(bytes[:], str)								// convert string to bytes
+    h := sha256.New()								// new sha256 object
+    h.Write(bytes)										// data is now converted to hex
+	code := h.Sum(nil)								// code is now the hex sum
+	codestr := hex.EncodeToString(code)	// converts hex to string
+    return codestr
 }
 
 func loadPage(title string) (*Page, error) {
@@ -26,6 +38,12 @@ func loadPage(title string) (*Page, error) {
 		return nil, err
 	}
 	return &Page{Title: title, Body: template.HTML(body)}, nil
+}
+
+
+type User struct {
+	Email string
+	Password string
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +58,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("view.html")
 	t.Execute(w, p)
 }
+
 
 func createAccount(usr *User) (bool) {
 	session, err := mgo.Dial("127.0.0.1:27017/")
@@ -80,9 +99,11 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	usr := new(User)
 	usr.Email = r.FormValue("email")
-	usr.Password = r.FormValue("pwd")
+	pass := r.FormValue("pwd")
+	usr.Password = pass
 	
 	if len(usr.Password) > 0 {
+		usr.Password = SHA(pass)
 		if doesAccountExist(usr.Email) { 
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
