@@ -1,20 +1,21 @@
 package main
 
 import (
-//	"fmt"
 	"io/ioutil"
 	"net/http"
 	"html/template"
+	"labix.org/v2/mgo"
+	"fmt"
 )
 
 type Page struct {
 	Title string
-	Body  []byte
+	Body template.HTML
 }
 
-func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	return ioutil.WriteFile(filename, p.Body, 0600)
+type User struct {
+	Email string
+	Password string
 }
 
 func loadPage(title string) (*Page, error) {
@@ -23,15 +24,15 @@ func loadPage(title string) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Page{Title: title, Body: body}, nil
+	return &Page{Title: title, Body: template.HTML(body)}, nil
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title)
-	
+
 	if err != nil {
-		http.Redirect(w, r, "/index", http.StatusFound)
+		http.Redirect(w, r, "/home", http.StatusFound)
 		return
 	}
 
@@ -39,9 +40,44 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, p)
 }
 
+func createAccount(usr *User) (bool) {
+	session, err := mgo.Dial("localhost:27017/")
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	c := session.DB("test").C("users")
+	err = c.Insert(usr)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return true
+}
+
+func registerHandler(w http.ResponseWriter, r *http.Request) {
+	const minPasswordLength = 4
+
+	usr := new(User)
+	usr.Email = r.FormValue("email")
+	usr.Password = r.FormValue("pwd")
+
+	if len(usr.Password) > 0 {
+		ok := createAccount(usr)
+		if ok {
+			http.Redirect(w, r, "/success", http.StatusFound)
+		} else {
+			http.Redirect(w, r, "/failed", http.StatusFound)
+		}
+		
+	} else {
+		viewHandler(w, r)
+	}
+}
+
 func main() {
+	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
 }
-
-
