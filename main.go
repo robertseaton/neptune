@@ -9,8 +9,9 @@ import (
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"math/rand"
 	"net/http"
-
+	"strconv"
 	"time"
 
 	"neptune/user"
@@ -24,7 +25,7 @@ type Page struct {
 type User struct {
 	Email    string
 	Password string
-	cookie http.Cookie
+	Cookie   http.Cookie
 }
 
 func SHA(str string) string {
@@ -137,6 +138,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Create a login cookie.
+func loginCookie(username string) http.Cookie {
+	cookieValue := username + ":" + strconv.Itoa(rand.Intn(100000000))
+	expire := time.Now().AddDate(0, 0, 1)
+	return http.Cookie{Name: "UserID", Value: cookieValue, Expires: expire, HttpOnly: true}
+}
+
+// Check if the user is logged in.
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	const minPasswordLength = 4
 
@@ -151,11 +160,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			ok := createAccount(usr)
 			if ok {
-				expire := time.Now().AddDate(0, 0, 1)
-				// TODO actually make a cookie!!!!
-				cookie := http.Cookie{"test", "tcookie", "/", "http://localhost:8080/", expire, expire.Format(time.UnixDate), 86400, true, true, "test=tcookie", []string{"test=tcookie"}}
+				cookie := loginCookie(usr.Email)
 				http.SetCookie(w, &cookie)
-				usr.cookie = cookie
+				usr.Cookie = cookie
 				http.Redirect(w, r, "/success", http.StatusFound)
 			} else {
 				http.Redirect(w, r, "/failed", http.StatusFound)
