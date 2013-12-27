@@ -9,14 +9,12 @@ import(
 
 func CreateUserFile(usrName string){
 
-	file, err := os.Create(usrName + ".txt")			// creates a file with that usrName
+	file, err := os.Create("accounts/" + usrName + ".txt")			// creates a file with that usrName
 	if err != nil {	fmt.Printf("error createUserFile FIX")  }
 
 	s := "You've successfully managed to log in! Enjoy your stay on Neptune. The current temperature outside the shuttle is -356°F. <br> <br>"
 
 	file.WriteString(s)
-
-	// need to populate the file
 
 }
 
@@ -37,6 +35,6 @@ func AppendUserFile(usrName string){
 	s := "nothing"
 
 	file.WriteString(s)
-	// add a book or something to the file
+	
 
 }
