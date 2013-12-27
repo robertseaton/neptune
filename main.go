@@ -128,7 +128,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			user.CreateUserFile(usr.Email)
 			s := "/accounts/" + usr.Email
-			fmt.Println(s)
 			http.Redirect(w, r, s, http.StatusFound)
 		} else {
 			http.Redirect(w, r, "/login-failed", http.StatusFound)
