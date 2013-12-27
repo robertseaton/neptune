@@ -50,6 +50,7 @@ func loadPage(title string) (*Page, error) {
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
+	// check user status loged-in/not
 	p, err := loadPage(title)
 
 	if err != nil {
@@ -111,6 +112,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 			ok := createAccount(usr)
 			if ok {
 				expire := time.Now().AddDate(0, 0, 1)
+				// TODO actually make a cookie!!!!
 				cookie := http.Cookie{"test", "tcookie", "/", "http://localhost:8080/", expire, expire.Format(time.UnixDate), 86400, true, true, "test=tcookie", []string{"test=tcookie"}}
 				http.SetCookie(w, &cookie)
 				usr.cookie = cookie
