@@ -1,0 +1,3 @@
+Hi! Welcome to Neptune! You're 2,700 million miles from Earth.<br><br>
+
+<a href="/register">Register</a> for an account.
