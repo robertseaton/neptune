@@ -3,17 +3,26 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
+
+	"time"
 )
 
 type Page struct {
 	Title string
 	Body  template.HTML
+}
+
+type User struct {
+	Email    string
+	Password string
+	cookie http.Cookie
 }
 
 func SHA(str string) string {
@@ -36,13 +45,9 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: template.HTML(body)}, nil
 }
 
-type User struct {
-	Email    string
-	Password string
-}
-
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
+	// check user status loged-in/not
 	p, err := loadPage(title)
 
 	if err != nil {
@@ -132,15 +137,20 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	usr := new(User)
 	usr.Email = r.FormValue("email")
-	usr.Password = r.FormValue("pwd")
+	pass := r.FormValue("pwd")
 
-	if len(usr.Password) > 0 {
-		usr.Password = SHA(usr.Password)
+	if len(pass) > 0 {
+		usr.Password = SHA(pass)
 		if doesAccountExist(usr.Email) {
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
 			ok := createAccount(usr)
 			if ok {
+				expire := time.Now().AddDate(0, 0, 1)
+				// TODO actually make a cookie!!!!
+				cookie := http.Cookie{"test", "tcookie", "/", "http://localhost:8080/", expire, expire.Format(time.UnixDate), 86400, true, true, "test=tcookie", []string{"test=tcookie"}}
+				http.SetCookie(w, &cookie)
+				usr.cookie = cookie
 				http.Redirect(w, r, "/success", http.StatusFound)
 			} else {
 				http.Redirect(w, r, "/failed", http.StatusFound)
@@ -148,7 +158,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		viewHandler(w, r)
-
 	}
 }
 
