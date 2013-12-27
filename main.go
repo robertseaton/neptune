@@ -1,25 +1,34 @@
 package main
 
 import (
-<<<<<<< HEAD
-//	"fmt"
-	"io/ioutil"
-	"net/http"
-	"html/template"
-=======
+	"crypto/sha256"
+	"encoding/hex"
+
 	"io/ioutil"
 	"net/http"
 	"html/template"
 	"labix.org/v2/mgo"
 	 "labix.org/v2/mgo/bson"
 	"fmt"
->>>>>>> a8517194256faf748bf0b54b91b3c928c3c6ee19
 )
 
 type Page struct {
 	Title string
-<<<<<<< HEAD
 	Body  template.HTML
+}
+
+func SHA(str string)(string){
+
+	var bytes []byte
+	//var n int32
+    //binary.Read(rand.Reader, binary.LittleEndian, &n)
+
+	copy(bytes[:], str)								// convert string to bytes
+    h := sha256.New()								// new sha256 object
+    h.Write(bytes)										// data is now converted to hex
+	code := h.Sum(nil)								// code is now the hex sum
+	codestr := hex.EncodeToString(code)	// converts hex to string
+    return codestr
 }
 
 func loadPage(title string) (*Page, error) {
@@ -31,49 +40,25 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: template.HTML(body)}, nil
 }
 
-=======
-	Body template.HTML
-}
 
 type User struct {
 	Email string
 	Password string
 }
 
-func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	return &Page{Title: title, Body: template.HTML(body)}, nil
-}
-
->>>>>>> a8517194256faf748bf0b54b91b3c928c3c6ee19
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title)
 
 	if err != nil {
-<<<<<<< HEAD
-		http.Redirect(w, r, "/index", http.StatusFound)
-=======
 		http.Redirect(w, r, "/home", http.StatusFound)
->>>>>>> a8517194256faf748bf0b54b91b3c928c3c6ee19
 		return
 	}
 
 	t, _ := template.ParseFiles("view.html")
 	t.Execute(w, p)
-<<<<<<< HEAD
 }
 
-func main() {
-	http.HandleFunc("/", viewHandler)
-	http.ListenAndServe(":8080", nil)
-=======
->>>>>>> a8517194256faf748bf0b54b91b3c928c3c6ee19
-}
 
 func createAccount(usr *User) (bool) {
 	session, err := mgo.Dial("127.0.0.1:27017/")
@@ -114,9 +99,11 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	usr := new(User)
 	usr.Email = r.FormValue("email")
-	usr.Password = r.FormValue("pwd")
+	pass := r.FormValue("pwd")
+	usr.Password = pass
 	
 	if len(usr.Password) > 0 {
+		usr.Password = SHA(pass)
 		if doesAccountExist(usr.Email) { 
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
