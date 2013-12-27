@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"html/template"
 	"labix.org/v2/mgo"
+	 "labix.org/v2/mgo/bson"
 	"fmt"
 )
 
@@ -41,7 +42,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAccount(usr *User) (bool) {
-	session, err := mgo.Dial("localhost:27017/")
+	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -56,23 +57,45 @@ func createAccount(usr *User) (bool) {
 	return true
 }
 
+// Checks if an account exists in the userbase.
+func doesAccountExist(email string) (bool) {
+	session, err := mgo.Dial("127.0.0.1:27017/")
+	if err != nil {
+		panic(err)
+	}
+
+	result := User{}
+	c := session.DB("test").C("users")
+	
+	err = c.Find(bson.M{"email": email}).One(&result)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	const minPasswordLength = 4
 
 	usr := new(User)
 	usr.Email = r.FormValue("email")
 	usr.Password = r.FormValue("pwd")
-
+	
 	if len(usr.Password) > 0 {
-		ok := createAccount(usr)
-		if ok {
-			http.Redirect(w, r, "/success", http.StatusFound)
+		if doesAccountExist(usr.Email) { 
+			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
-			http.Redirect(w, r, "/failed", http.StatusFound)
+			ok := createAccount(usr)
+			if ok {
+				http.Redirect(w, r, "/success", http.StatusFound)
+			} else {
+				http.Redirect(w, r, "/failed", http.StatusFound)
+			}
 		}
-		
 	} else {
 		viewHandler(w, r)
+		
 	}
 }
 

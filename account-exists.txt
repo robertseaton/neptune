@@ -1,0 +1,1 @@
+That account exists! Please try to <a href="/register">register again.</a>
