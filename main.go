@@ -1,10 +1,7 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"github.com/robertseaton/neptune/user"
 	"html/template"
 	"io/ioutil"
 	"labix.org/v2/mgo"
@@ -14,11 +11,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"neptune/pkgs/user"
+	"neptune/pkgs/codify"
 )
 
 type Page struct {
 	Title string
 	Body  template.HTML
+	User   template.HTML
 }
 
 type User struct {
@@ -27,19 +28,8 @@ type User struct {
 	SessionID string
 }
 
-func SHA(str string) string {
-
-	var bytes []byte
-	copy(bytes[:], str)                 // convert string to bytes
-	h := sha256.New()                   // new sha256 object
-	h.Write(bytes)                      // data is now converted to hex
-	code := h.Sum(nil)                  // code is now the hex sum
-	codestr := hex.EncodeToString(code) // converts hex to string
-	return codestr
-}
-
 func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
+	filename := "web/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -48,11 +38,12 @@ func loadPage(title string) (*Page, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	if isLoggedIn(r) {
+	/*if isLoggedIn(r) {
 		fmt.Println("The user is logged in.")
 	} else {
 		fmt.Println("The user is not logged in.")
 	}
+	*/
 	title := r.URL.Path[len("/"):]
 	// check user status loged-in/not
 	p, err := loadPage(title)
@@ -101,7 +92,7 @@ func doesAccountExist(email string) bool {
 }
 
 func checkCredentials(email string, password string) bool {
-	password = SHA(password)
+	password = codify.SHA(password)
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
@@ -131,8 +122,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		ok := checkCredentials(usr.Email, usr.Password)
 		if ok {
 			user.CreateUserFile(usr.Email)
-			s := "/accounts/" + usr.Email
-			http.Redirect(w, r, s, http.StatusFound)
+			cookie := loginCookie(usr.Email)
+			http.SetCookie(w, &cookie)
+			usr.SessionID = cookie.Value
+			_ = updateUser(usr)
+			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		} else {
 			http.Redirect(w, r, "/login-failed", http.StatusFound)
 		}
@@ -213,7 +207,7 @@ func isLoggedIn(r *http.Request) bool {
 		return true
 	}
 
-	fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
+	//fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
 	return false
 }
 
@@ -225,18 +219,14 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
-
+	
 	if len(pass) > 0 {
-		usr.Password = SHA(pass)
+		usr.Password = codify.SHA(pass)
 		if doesAccountExist(usr.Email) {
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
 			ok := createAccount(usr)
 			if ok {
-				cookie := loginCookie(usr.Email)
-				http.SetCookie(w, &cookie)
-				usr.SessionID = cookie.Value
-				_ = updateUser(usr)
 				http.Redirect(w, r, "/success", http.StatusFound)
 			} else {
 				http.Redirect(w, r, "/failed", http.StatusFound)
