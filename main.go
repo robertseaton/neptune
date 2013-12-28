@@ -28,6 +28,7 @@ type User struct {
 	SessionID string
 }
 
+// Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
 	var filename string
 	var usr []byte
@@ -46,6 +47,7 @@ func loadPage(title string, r *http.Request) (*Page, error) {
 	return &Page{Title: title, Body: template.HTML(body), UserData: template.HTML(usr)}, nil
 }
 
+// Shows a particular page
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title, r)
@@ -62,6 +64,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, p)
 }
 
+// Creates an account and adds it to the Database
 func createAccount(usr *User) bool {
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
@@ -96,6 +99,7 @@ func doesAccountExist(email string) bool {
 	return true
 }
 
+// Checks to assure credientials
 func checkCredentials(email string, password string) bool {
 	password = codify.SHA(password)
 	session, err := mgo.Dial("127.0.0.1:27017/")
@@ -118,6 +122,7 @@ func checkCredentials(email string, password string) bool {
 	return false
 }
 
+// Handles the users loggin and gives them a cookie for doing so
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(User)
 	usr.Email = r.FormValue("email")
@@ -210,10 +215,10 @@ func isLoggedIn(r *http.Request) bool {
 		return true
 	}
 
-	//fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
 	return false
 }
 
+// Registers the new user
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(User)
 	usr.Email = r.FormValue("email")
@@ -236,6 +241,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Logs out the user, removes their cookie from the database
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	
 	cookie, err := r.Cookie("SessionID")
