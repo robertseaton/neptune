@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 
 	"fmt"
 	"html/template"
@@ -14,29 +12,20 @@ import (
 	"strconv"
 	"time"
 
-	"neptune/user"
+	"neptune/pkgs/user"
+	"neptune/pkgs/codify"
 )
 
 type Page struct {
 	Title string
 	Body  template.HTML
+	User   template.HTML
 }
 
 type User struct {
 	Email    string
 	Password string
 	Cookie   http.Cookie
-}
-
-func SHA(str string) string {
-
-	var bytes []byte
-	copy(bytes[:], str)                 // convert string to bytes
-	h := sha256.New()                   // new sha256 object
-	h.Write(bytes)                      // data is now converted to hex
-	code := h.Sum(nil)                  // code is now the hex sum
-	codestr := hex.EncodeToString(code) // converts hex to string
-	return codestr
 }
 
 func loadPage(title string) (*Page, error) {
@@ -97,7 +86,7 @@ func doesAccountExist(email string) bool {
 }
 
 func checkCredentials(email string, password string) bool {
-	password = SHA(password)
+	password = codify.SHA(password)
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
@@ -127,8 +116,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		ok := checkCredentials(usr.Email, usr.Password)
 		if ok {
 			user.CreateUserFile(usr.Email)
-			s := "/accounts/" + usr.Email
-			http.Redirect(w, r, s, http.StatusFound)
+			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		} else {
 			http.Redirect(w, r, "/login-failed", http.StatusFound)
 		}
@@ -153,7 +141,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	pass := r.FormValue("pwd")
 
 	if len(pass) > 0 {
-		usr.Password = SHA(pass)
+		usr.Password = codify.SHA(pass)
 		if doesAccountExist(usr.Email) {
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
