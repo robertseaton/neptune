@@ -19,7 +19,7 @@ import (
 type Page struct {
 	Title string
 	Body  template.HTML
-	User   template.HTML
+	UserData   template.HTML
 }
 
 type User struct {
@@ -28,25 +28,28 @@ type User struct {
 	SessionID string
 }
 
-func loadPage(title string) (*Page, error) {
-	filename := "web/" + title + ".txt"
+func loadPage(title string, r *http.Request) (*Page, error) {
+	var filename string
+	var usr []byte
+	if isLoggedIn(r) {
+		cookie, _ := r.Cookie("SessionID")
+		z := strings.Split(cookie.Value, ":")
+		filename = "accounts/" + z[0] + ".txt"
+		usr, _ = ioutil.ReadFile(filename)
+	} 
+	filename = "web/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	return &Page{Title: title, Body: template.HTML(body)}, nil
+	fmt.Println(template.HTML(usr))
+	return &Page{Title: title, Body: template.HTML(body), UserData: template.HTML(usr)}, nil
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	/*if isLoggedIn(r) {
-		fmt.Println("The user is logged in.")
-	} else {
-		fmt.Println("The user is not logged in.")
-	}
-	*/
 	title := r.URL.Path[len("/"):]
 	// check user status loged-in/not
-	p, err := loadPage(title)
+	p, err := loadPage(title, r)
 
 	if err != nil {
 		http.Redirect(w, r, "/home", http.StatusFound)
@@ -124,7 +127,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			user.CreateUserFile(usr.Email)
 			cookie := loginCookie(usr.Email)
 			http.SetCookie(w, &cookie)
-			usr.SessionID = cookie.Value
+			usr.SessionID = cookie.Value	
 			_ = updateUser(usr)
 			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		} else {
@@ -209,10 +212,6 @@ func isLoggedIn(r *http.Request) bool {
 
 	//fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
 	return false
-}
-
-func getUserID() {
-
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
