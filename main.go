@@ -42,17 +42,19 @@ func loadPage(title string, r *http.Request) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(template.HTML(usr))
+
 	return &Page{Title: title, Body: template.HTML(body), UserData: template.HTML(usr)}, nil
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
-	// check user status loged-in/not
 	p, err := loadPage(title, r)
 
-	if err != nil {
+	if err != nil && !isLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
+		return
+	} else if err != nil {
+		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
 
@@ -193,8 +195,6 @@ func isLoggedIn(r *http.Request) bool {
 
 	sessionID := cookie.Value
 
-	fmt.Println("SessionID: ", sessionID)
-
 	z := strings.Split(sessionID, ":")
 	email := z[0]
 	sessionID = z[1]
@@ -236,8 +236,35 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	
+	cookie, err := r.Cookie("SessionID")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	sessionID := cookie.Value
+
+	z := strings.Split(sessionID, ":")
+	usr := new(User)
+	usr.Email = z[0]
+	sessionID = z[1]
+
+	session, err := mgo.Dial("127.0.0.1:27017/")
+	if err != nil {
+		return
+	}
+	c := session.DB("test").C("users")
+	c.Remove(bson.M{"email": usr.Email})
+	
+	http.Redirect(w, r, "/home", http.StatusFound)
+
+}
+
 func main() {
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
