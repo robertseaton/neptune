@@ -29,7 +29,7 @@ type User struct {
 }
 
 func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
+	filename := "web/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -38,11 +38,12 @@ func loadPage(title string) (*Page, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	if isLoggedIn(r) {
+	/*if isLoggedIn(r) {
 		fmt.Println("The user is logged in.")
 	} else {
 		fmt.Println("The user is not logged in.")
 	}
+	*/
 	title := r.URL.Path[len("/"):]
 	// check user status loged-in/not
 	p, err := loadPage(title)
@@ -121,6 +122,10 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		ok := checkCredentials(usr.Email, usr.Password)
 		if ok {
 			user.CreateUserFile(usr.Email)
+			cookie := loginCookie(usr.Email)
+			http.SetCookie(w, &cookie)
+			usr.SessionID = cookie.Value
+			_ = updateUser(usr)
 			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		} else {
 			http.Redirect(w, r, "/login-failed", http.StatusFound)
@@ -202,7 +207,7 @@ func isLoggedIn(r *http.Request) bool {
 		return true
 	}
 
-	fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
+	//fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
 	return false
 }
 
@@ -214,7 +219,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
-
+	
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
 		if doesAccountExist(usr.Email) {
@@ -222,10 +227,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			ok := createAccount(usr)
 			if ok {
-				cookie := loginCookie(usr.Email)
-				http.SetCookie(w, &cookie)
-				usr.SessionID = cookie.Value
-				_ = updateUser(usr)
 				http.Redirect(w, r, "/success", http.StatusFound)
 			} else {
 				http.Redirect(w, r, "/failed", http.StatusFound)
