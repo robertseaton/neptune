@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-
 	"fmt"
+	"github.com/robertseaton/neptune/user"
 	"html/template"
 	"io/ioutil"
 	"labix.org/v2/mgo"
@@ -12,9 +12,8 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
-
-	"neptune/user"
 )
 
 type Page struct {
@@ -23,9 +22,9 @@ type Page struct {
 }
 
 type User struct {
-	Email    string
-	Password string
-	Cookie   http.Cookie
+	Email     string
+	Password  string
+	SessionID string
 }
 
 func SHA(str string) string {
@@ -49,6 +48,11 @@ func loadPage(title string) (*Page, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
+	if isLoggedIn(r) {
+		fmt.Println("The user is logged in.")
+	} else {
+		fmt.Println("The user is not logged in.")
+	}
 	title := r.URL.Path[len("/"):]
 	// check user status loged-in/not
 	p, err := loadPage(title)
@@ -141,13 +145,83 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func loginCookie(username string) http.Cookie {
 	cookieValue := username + ":" + strconv.Itoa(rand.Intn(100000000))
 	expire := time.Now().AddDate(0, 0, 1)
-	return http.Cookie{Name: "UserID", Value: cookieValue, Expires: expire, HttpOnly: true}
+	return http.Cookie{Name: "SessionID", Value: cookieValue, Expires: expire, HttpOnly: true}
+}
+
+// Updates the user's data in the database (e.g. cookie data).
+func updateUser(usr *User) bool {
+	session, err := mgo.Dial("127.0.0.1:27017/")
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	c := session.DB("test").C("users")
+	err = c.Update(bson.M{"email": usr.Email}, usr)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return true
+}
+
+// Check the database for the user's session ID.
+func lookupSessionID(email string) (string, string) {
+	session, err := mgo.Dial("127.0.0.1:27017/")
+	if err != nil {
+		return "", "Failed to connect to database."
+	}
+
+	result := User{}
+	c := session.DB("test").C("users")
+
+	err = c.Find(bson.M{"email": email}).One(&result)
+	if err != nil {
+		return "", "Failed to find user in database."
+	}
+
+	z := strings.Split(result.SessionID, ":")
+
+	return z[1], ""
+
 }
 
 // Check if the user is logged in.
-func registerHandler(w http.ResponseWriter, r *http.Request) {
-	const minPasswordLength = 4
+func isLoggedIn(r *http.Request) bool {
+	cookie, err := r.Cookie("SessionID")
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
 
+	sessionID := cookie.Value
+
+	fmt.Println("SessionID: ", sessionID)
+
+	z := strings.Split(sessionID, ":")
+	email := z[0]
+	sessionID = z[1]
+
+	expectedSessionID, errz := lookupSessionID(email)
+
+	if errz != "" {
+		fmt.Println(errz)
+		return false
+	}
+
+	if sessionID == expectedSessionID {
+		return true
+	}
+
+	fmt.Println("Got %s, expected %s.", sessionID, expectedSessionID)
+	return false
+}
+
+func getUserID() {
+
+}
+
+func registerHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
@@ -161,7 +235,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 			if ok {
 				cookie := loginCookie(usr.Email)
 				http.SetCookie(w, &cookie)
-				usr.Cookie = cookie
+				usr.SessionID = cookie.Value
+				_ = updateUser(usr)
 				http.Redirect(w, r, "/success", http.StatusFound)
 			} else {
 				http.Redirect(w, r, "/failed", http.StatusFound)
