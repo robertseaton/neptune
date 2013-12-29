@@ -1,5 +1,25 @@
-<h1>Welcome to {{.Title}}</h1>
+<!DOCTYPE html>
+<html>
 
+<style>
+body {
+background-color:#d0e4fe;
+text-align:center;
+} h1 {
+color:green;
+text-align:center;
+} p {
+font-family:"Times New Roman";
+font-size:20px;
+}
+</style>
+
+<head>
+<h1>{{.Title}}</h1>
+</head>
+
+<body>
 {{.Body}}
+</body>
 
-{{.User}}
+{{.UserData}}
