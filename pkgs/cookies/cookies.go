@@ -32,7 +32,7 @@ func lookupSessionID(email string) (string, string) {
 		return "", "Failed to connect to database."
 	}
 
-	result := User{}
+	result := User{} 
 	c := session.DB("test").C("users")
 	err = c.Find(bson.M{"email": email}).One(&result)
 	if err != nil {
@@ -40,12 +40,11 @@ func lookupSessionID(email string) (string, string) {
 	}
 
 	z := strings.Split(result.SessionID, ":")
-	if z != nil {
+	if z[0] == "" {
 		return "", ""
 	}
 
 	return z[1], ""
-
 }
 
 // Check if the user is logged in.

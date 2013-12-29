@@ -19,7 +19,7 @@ type User struct {
 }
 
 // Create a login cookie.
-func loginCookie(username string) http.Cookie {
+func LoginCookie(username string) http.Cookie {
 	cookieValue := username + ":" + strconv.Itoa(rand.Intn(100000000))
 	expire := time.Now().AddDate(0, 0, 1)
 	return http.Cookie{Name: "SessionID", Value: cookieValue, Expires: expire, HttpOnly: true}
@@ -32,7 +32,7 @@ func lookupSessionID(email string) (string, string) {
 		return "", "Failed to connect to database."
 	}
 
-	result := User{}
+	result := User{} 
 	c := session.DB("test").C("users")
 	err = c.Find(bson.M{"email": email}).One(&result)
 	if err != nil {
@@ -40,12 +40,14 @@ func lookupSessionID(email string) (string, string) {
 	}
 
 	z := strings.Split(result.SessionID, ":")
-	if z != nil {
+	if z[0] == "" {
 		return "", ""
 	}
 
-	return z[1], ""
+	fmt.Println("here")
+	fmt.Println(z)
 
+	return z[1], ""
 }
 
 // Check if the user is logged in.

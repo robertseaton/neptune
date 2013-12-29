@@ -22,21 +22,26 @@ type Page struct {
 
 // Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
+
 	var filename string
 	var usr []byte
+	var option[]byte
+
 	if cookies.IsLoggedIn(r) {
 		cookie, _ := r.Cookie("SessionID")
 		z := strings.Split(cookie.Value, ":")
 		filename = "accounts/" + z[0] + ".txt"
 		usr, _ = ioutil.ReadFile(filename)
+		option = []byte("<a href='/logout'>logout</a>")
 	} 
+
 	filename = "web/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Page{Title: title, Body: template.HTML(body), UserData: template.HTML(usr)}, nil
+	return &Page{Title: title, Body: template.HTML(body), UserData: (template.HTML(usr) + template.HTML(option))}, nil
 }
 
 // Shows a particular page
@@ -47,7 +52,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil && !cookies.IsLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return
-	} else if err != nil {
+	}else if err != nil{
 		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
@@ -126,7 +131,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	c := session.DB("test").C("users")
 	c.Remove(bson.M{"SessionID": usr.SessionID})
-	
+
 	http.Redirect(w, r, "/home", http.StatusFound)
 
 }
