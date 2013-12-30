@@ -65,10 +65,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
-	password := r.FormValue("pwd")
+	pass := r.FormValue("pwd")
 
-	if len(password) > 0 {
-		usr.Password = codify.SHA(password)
+	if len(pass) > 0 {
+		usr.Password = codify.SHA(pass)
 		ok := user.CheckCredentials(usr.Email, usr.Password)
 		if ok {
 			user.CreateUserFile(usr.Email)
@@ -93,7 +93,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
-		
 		if user.DoesAccountExist(usr.Email) {
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
@@ -123,13 +122,14 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	z := strings.Split(sessionID, ":")
 	usr := new(user.User)
 	usr.Email = z[0]
-	usr.SessionID = z[1]
+	usr.SessionID = z[0] + ":" + z[1]
 
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		return
 	}
 	c := session.DB("test").C("users")
+	fmt.Println(usr.SessionID)
 	c.Remove(bson.M{"SessionID": usr.SessionID})
 
 	http.Redirect(w, r, "/home", http.StatusFound)
