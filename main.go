@@ -8,6 +8,8 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strings"
+	"strconv"
+	"math/rand"
 
 	"neptune/pkgs/user"
 	"neptune/pkgs/codify"
@@ -131,7 +133,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	c := session.DB("test").C("users")
 	c.Find(bson.M{"sessionid": sessionID}).One(&result)
-	result.SessionID = result.Email + ":" + codify.SHA(result.SessionID)
+	result.SessionID = result.Email + ":" + codify.SHA(result.SessionID + strconv.Itoa(rand.Intn(100000000)))
 	err = c.Update(bson.M{"email": result.Email}, result)
 
 	if err != nil {
