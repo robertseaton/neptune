@@ -33,7 +33,9 @@ func loadPage(title string, r *http.Request) (*Page, error) {
 		filename = "accounts/" + z[0] + ".txt"
 		usr, _ = ioutil.ReadFile(filename)
 		option = []byte("<a href='/logout'>logout</a>")
-	} 
+	} else {
+		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
+	}
 
 	filename = "web/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
@@ -46,6 +48,7 @@ func loadPage(title string, r *http.Request) (*Page, error) {
 
 // Shows a particular page
 func viewHandler(w http.ResponseWriter, r *http.Request) {
+
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title, r)
 
@@ -63,6 +66,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles the users loggin and gives them a cookie for doing so
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
@@ -74,7 +78,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			user.CreateUserFile(usr.Email)
 			cookie := cookies.LoginCookie(usr.Email)
 			http.SetCookie(w, &cookie)
-			usr.SessionID = cookie.Value	
+			usr.SessionID = cookie.Value
 			_ = user.UpdateUser(usr)
 			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		} else {
@@ -87,6 +91,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 // Registers the new user
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
@@ -117,20 +122,21 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	result := new(user.User)
 	sessionID := cookie.Value
-
-	z := strings.Split(sessionID, ":")
-	usr := new(user.User)
-	usr.Email = z[0]
-	usr.SessionID = z[0] + ":" + z[1]
-
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		return
 	}
+
 	c := session.DB("test").C("users")
-	fmt.Println(usr.SessionID)
-	c.Remove(bson.M{"SessionID": usr.SessionID})
+	c.Find(bson.M{"sessionid": sessionID}).One(&result)
+	result.SessionID = result.Email + ":" + codify.SHA(result.SessionID)
+	err = c.Update(bson.M{"email": result.Email}, result)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	http.Redirect(w, r, "/home", http.StatusFound)
 
