@@ -51,7 +51,7 @@ func DoesAccountExist(email string) bool {
 
 // Checks to assure credientials
 func CheckCredentials(email string, password string) bool {
-	
+
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
@@ -94,7 +94,7 @@ func CreateUserFile(usrName string){
 	file, err := os.Create("accounts/" + usrName + ".txt")			// creates a file with that usrName
 	if err != nil {	fmt.Printf("error createUserFile FIX")  }
 
-	s := usrName + ":<br><br>"
+	s := usrName + ": "
 
 	file.WriteString(s)
 

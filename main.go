@@ -8,6 +8,8 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strings"
+	"strconv"
+	"math/rand"
 
 	"neptune/pkgs/user"
 	"neptune/pkgs/codify"
@@ -22,32 +24,40 @@ type Page struct {
 
 // Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
+
 	var filename string
 	var usr []byte
+	var option[]byte
+
 	if cookies.IsLoggedIn(r) {
 		cookie, _ := r.Cookie("SessionID")
 		z := strings.Split(cookie.Value, ":")
 		filename = "accounts/" + z[0] + ".txt"
 		usr, _ = ioutil.ReadFile(filename)
-	} 
+		option = []byte("<a href='/logout'>logout</a>")
+	} else {
+		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
+	}
+
 	filename = "web/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Page{Title: title, Body: template.HTML(body), UserData: template.HTML(usr)}, nil
+	return &Page{Title: title, Body: template.HTML(body), UserData: (template.HTML(usr) + template.HTML(option))}, nil
 }
 
 // Shows a particular page
 func viewHandler(w http.ResponseWriter, r *http.Request) {
+
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title, r)
 
 	if err != nil && !cookies.IsLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return
-	} else if err != nil {
+	}else if err != nil{
 		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
@@ -58,18 +68,19 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles the users loggin and gives them a cookie for doing so
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
-	password := r.FormValue("pwd")
+	pass := r.FormValue("pwd")
 
-	if len(password) > 0 {
-		usr.Password = codify.SHA(password)
+	if len(pass) > 0 {
+		usr.Password = codify.SHA(pass)
 		ok := user.CheckCredentials(usr.Email, usr.Password)
 		if ok {
 			user.CreateUserFile(usr.Email)
 			cookie := cookies.LoginCookie(usr.Email)
 			http.SetCookie(w, &cookie)
-			usr.SessionID = cookie.Value	
+			usr.SessionID = cookie.Value
 			_ = user.UpdateUser(usr)
 			http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		} else {
@@ -82,13 +93,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 // Registers the new user
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
 	
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
-		
 		if user.DoesAccountExist(usr.Email) {
 			http.Redirect(w, r, "/account-exists", http.StatusFound)
 		} else {
@@ -113,20 +124,22 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	result := new(user.User)
 	sessionID := cookie.Value
-
-	z := strings.Split(sessionID, ":")
-	usr := new(user.User)
-	usr.Email = z[0]
-	usr.SessionID = z[1]
-
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		return
 	}
+
 	c := session.DB("test").C("users")
-	c.Remove(bson.M{"SessionID": usr.SessionID})
-	
+	c.Find(bson.M{"sessionid": sessionID}).One(&result)
+	result.SessionID = result.Email + ":" + codify.SHA(result.SessionID + strconv.Itoa(rand.Intn(100000000)))
+	err = c.Update(bson.M{"email": result.Email}, result)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	http.Redirect(w, r, "/home", http.StatusFound)
 
 }

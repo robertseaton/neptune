@@ -10,6 +10,8 @@ import(
 	"strconv"
 	"strings"
 	"time"
+
+	"neptune/pkgs/codify"
 )
 
 type User struct {
@@ -20,19 +22,21 @@ type User struct {
 
 // Create a login cookie.
 func LoginCookie(username string) http.Cookie {
-	cookieValue := username + ":" + strconv.Itoa(rand.Intn(100000000))
+
+	cookieValue := username + ":" + codify.SHA(username + strconv.Itoa(rand.Intn(100000000)))
 	expire := time.Now().AddDate(0, 0, 1)
 	return http.Cookie{Name: "SessionID", Value: cookieValue, Expires: expire, HttpOnly: true}
 }
 
 // Check the database for the user's session ID.
 func lookupSessionID(email string) (string, string) {
+
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		return "", "Failed to connect to database."
 	}
 
-	result := User{}
+	result := User{} 
 	c := session.DB("test").C("users")
 	err = c.Find(bson.M{"email": email}).One(&result)
 	if err != nil {
@@ -40,16 +44,16 @@ func lookupSessionID(email string) (string, string) {
 	}
 
 	z := strings.Split(result.SessionID, ":")
-	if z != nil {
+	if z[0] == "" {
 		return "", ""
 	}
 
 	return z[1], ""
-
 }
 
 // Check if the user is logged in.
 func IsLoggedIn(r *http.Request) bool {
+
 	cookie, err := r.Cookie("SessionID")
 	if err != nil {
 		fmt.Println(err)
