@@ -18,22 +18,25 @@ body {
 	font-size:20px;
 } 
 div {
-		text-align:left;
-		position:absolute;
-		border:2px solid #a1a1a1;
-		padding:10px 40px; 
-		background:#dddddd;
-		width:300px;
-		border-radius:25px;
-} h3 {
-	
-	text-align: right;
+
+	position:relative;
+	display:inline;
+	text-align:left;
+	border:2px solid #a1a1a1;
+	padding:10px 40px; 
+	background:#dddddd;
+	width:300px;
+	border-radius:25px;
+	margin-left: 80%;
+	right:20px;
 
 }
 </style>
 
 <head>
-<div>{{.UserData}}</div> <h1>{{.Title}}</h1>
+<br>
+<div>{{.UserData}}</div>
+<h1>{{.Title}}</h1>
 </head>
 <br>
 <body>
