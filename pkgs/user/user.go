@@ -3,8 +3,13 @@ package user
 import(
 	"os"
 	"fmt"
+	"net/http"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"io/ioutil"
+	"strings"
+
+	"neptune/pkgs/cookies"
 )
 
 type User struct {
@@ -15,7 +20,7 @@ type User struct {
 
 // Creates an account and adds it to the Database
 func CreateAccount(usr *User) bool {
-	
+
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		fmt.Println(err)
@@ -33,6 +38,7 @@ func CreateAccount(usr *User) bool {
 
 // Checks if an account exists in the userbase.
 func DoesAccountExist(email string) bool {
+
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
@@ -87,6 +93,25 @@ func UpdateUser(usr *User) bool {
 		return false
 	}
 	return true
+}
+
+// Loads users info - or supplys links to login or register 
+func LoadUserInfo(title string, r *http.Request)(filename string, option []byte, usr []byte){
+
+	if cookies.IsLoggedIn(r) {
+		cookie, _ := r.Cookie("SessionID")
+		z := strings.Split(cookie.Value, ":")
+		filename = "accounts/" + z[0] + ".txt"
+		usr, _ = ioutil.ReadFile(filename)
+		option = []byte("<a href='/logout'>logout</a>")
+	} else {
+		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
+	}
+
+	filename = "web/" + title + ".txt"
+
+	return filename, option, usr
+
 }
 
 func CreateUserFile(usrName string){

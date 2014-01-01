@@ -7,7 +7,6 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
-	"strings"
 	"strconv"
 	"math/rand"
 
@@ -25,21 +24,7 @@ type Page struct {
 // Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
 
-	var filename string
-	var usr []byte
-	var option[]byte
-
-	if cookies.IsLoggedIn(r) {
-		cookie, _ := r.Cookie("SessionID")
-		z := strings.Split(cookie.Value, ":")
-		filename = "accounts/" + z[0] + ".txt"
-		usr, _ = ioutil.ReadFile(filename)
-		option = []byte("<a href='/logout'>logout</a>")
-	} else {
-		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
-	}
-
-	filename = "web/" + title + ".txt"
+	filename, option, usr := user.LoadUserInfo(title, r)
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -144,10 +129,17 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Handles the users loggin and gives them a cookie for doing so
+func userHandler(w http.ResponseWriter, r *http.Request) {
+
+
+}
+
 func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
+	//http.HandleFunc("/user", userHandler)
 	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
 }
