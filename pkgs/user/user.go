@@ -6,7 +6,6 @@ import(
 	"net/http"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"io/ioutil"
 	"strings"
 
 	"neptune/pkgs/cookies"
@@ -101,8 +100,8 @@ func LoadUserInfo(title string, r *http.Request)(filename string, option []byte,
 	if cookies.IsLoggedIn(r) {
 		cookie, _ := r.Cookie("SessionID")
 		z := strings.Split(cookie.Value, ":")
-		filename = "accounts/" + z[0] + ".txt"
-		usr, _ = ioutil.ReadFile(filename)
+		filename = "accounts/" + z[0] 
+		usr = []byte("<a href='" + filename + "'>" + z[0] + "</a>: ")
 		option = []byte("<a href='/logout'>logout</a>")
 	} else {
 		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
@@ -110,17 +109,23 @@ func LoadUserInfo(title string, r *http.Request)(filename string, option []byte,
 
 	filename = "web/" + title + ".txt"
 
+	// Adds link to profile if clicked.
+	file := strings.Split(title, "/")
+	if len(file) > 1 {
+		filename = "accounts/" + file[1] + ".profile"
+	}
+
 	return filename, option, usr
 
 }
 
 func CreateUserFile(usrName string){
 
-	file, err := os.Create("accounts/" + usrName + ".txt")			// creates a file with that usrName
-	if err != nil {	fmt.Printf("error createUserFile FIX")  }
+	file, err := os.Create("accounts/" + usrName + ".profile")		// creates a file with that usrName
+	if err != nil { fmt.Println("Error creating user profile") }
 
-	s := usrName + ": "
-
+	s := usrName + " welcome!<br>"
+	// TODO add a plugin to a database of books
 	file.WriteString(s)
 
 }

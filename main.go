@@ -129,17 +129,10 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Handles the users loggin and gives them a cookie for doing so
-func userHandler(w http.ResponseWriter, r *http.Request) {
-
-
-}
-
 func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
-	//http.HandleFunc("/user", userHandler)
 	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
 }
