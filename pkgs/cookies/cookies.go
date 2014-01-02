@@ -1,7 +1,6 @@
 package cookies
 
-import(
-
+import (
 	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -23,7 +22,7 @@ type User struct {
 // Create a login cookie.
 func LoginCookie(username string) http.Cookie {
 
-	cookieValue := username + ":" + codify.SHA(username + strconv.Itoa(rand.Intn(100000000)))
+	cookieValue := username + ":" + codify.SHA(username+strconv.Itoa(rand.Intn(100000000)))
 	expire := time.Now().AddDate(0, 0, 1)
 	return http.Cookie{Name: "SessionID", Value: cookieValue, Expires: expire, HttpOnly: true}
 }
@@ -36,11 +35,11 @@ func lookupSessionID(email string) (string, string) {
 		return "", "Failed to connect to database."
 	}
 
-	result := User{} 
+	result := User{}
 	c := session.DB("test").C("users")
 	err = c.Find(bson.M{"email": email}).One(&result)
 	if err != nil {
-	//	return "", "Failed to find user in database."
+		//	return "", "Failed to find user in database."
 	}
 
 	z := strings.Split(result.SessionID, ":")

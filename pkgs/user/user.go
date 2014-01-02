@@ -1,11 +1,11 @@
 package user
 
-import(
-	"os"
+import (
 	"fmt"
-	"net/http"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"net/http"
+	"os"
 	"strings"
 
 	"neptune/pkgs/cookies"
@@ -94,13 +94,13 @@ func UpdateUser(usr *User) bool {
 	return true
 }
 
-// Loads users info - or supplys links to login or register 
-func LoadUserInfo(title string, r *http.Request)(filename string, option []byte, usr []byte){
+// Loads users info - or supplys links to login or register
+func LoadUserInfo(title string, r *http.Request) (filename string, option []byte, usr []byte) {
 
 	if cookies.IsLoggedIn(r) {
 		cookie, _ := r.Cookie("SessionID")
 		z := strings.Split(cookie.Value, ":")
-		filename = "accounts/" + z[0] 
+		filename = "accounts/" + z[0]
 		usr = []byte("<a href='" + filename + "'>" + z[0] + "</a>: ")
 		option = []byte("<a href='/logout'>logout</a>")
 	} else {
@@ -119,10 +119,12 @@ func LoadUserInfo(title string, r *http.Request)(filename string, option []byte,
 
 }
 
-func CreateUserFile(usrName string){
+func CreateUserFile(usrName string) {
 
-	file, err := os.Create("accounts/" + usrName + ".profile")		// creates a file with that usrName
-	if err != nil { fmt.Println("Error creating user profile") }
+	file, err := os.Create("accounts/" + usrName + ".profile") // creates a file with that usrName
+	if err != nil {
+		fmt.Println("Error creating user profile")
+	}
 
 	s := usrName + " welcome!<br>"
 	// TODO add a plugin to a database of books
@@ -130,22 +132,26 @@ func CreateUserFile(usrName string){
 
 }
 
-func ReadUserFile(usrName string)(file *os.File){
+func ReadUserFile(usrName string) (file *os.File) {
 
 	file, err := os.Open(usrName)
-	if err != nil {	fmt.Printf("error readUserFile FIX")  }
+	if err != nil {
+		fmt.Printf("error readUserFile FIX")
+	}
 
 	return file
 
 }
 
-func AppendUserFile(usrName string){
+func AppendUserFile(usrName string) {
 
-	file, err:= os.OpenFile(usrName, os.O_WRONLY, 0666)
-	if err != nil {	fmt.Printf("error appendUserFile FIX")  }
+	file, err := os.OpenFile(usrName, os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("error appendUserFile FIX")
+	}
 
 	s := "nothing"
 
 	file.WriteString(s)
-	
+
 }
