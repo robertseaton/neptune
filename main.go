@@ -6,40 +6,25 @@ import (
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"net/http"
-	"strings"
-	"strconv"
 	"math/rand"
+	"net/http"
+	"strconv"
 
-	"neptune/pkgs/user"
 	"neptune/pkgs/codify"
 	"neptune/pkgs/cookies"
+	"neptune/pkgs/user"
 )
 
 type Page struct {
-	Title string
-	Body  template.HTML
-	UserData   template.HTML
+	Title    string
+	Body     template.HTML
+	UserData template.HTML
 }
 
 // Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
 
-	var filename string
-	var usr []byte
-	var option[]byte
-
-	if cookies.IsLoggedIn(r) {
-		cookie, _ := r.Cookie("SessionID")
-		z := strings.Split(cookie.Value, ":")
-		filename = "accounts/" + z[0] + ".txt"
-		usr, _ = ioutil.ReadFile(filename)
-		option = []byte("<a href='/logout'>logout</a>")
-	} else {
-		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
-	}
-
-	filename = "web/" + title + ".txt"
+	filename, option, usr := user.LoadUserInfo(title, r)
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -57,7 +42,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil && !cookies.IsLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return
-	}else if err != nil{
+	} else if err != nil {
 		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
@@ -97,7 +82,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
-	
+
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
 		if user.DoesAccountExist(usr.Email) {
@@ -117,7 +102,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 // Logs out the user, removes their cookie from the database
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	cookie, err := r.Cookie("SessionID")
 	if err != nil {
 		fmt.Println(err)
@@ -133,7 +118,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	c := session.DB("test").C("users")
 	c.Find(bson.M{"sessionid": sessionID}).One(&result)
-	result.SessionID = result.Email + ":" + codify.SHA(result.SessionID + strconv.Itoa(rand.Intn(100000000)))
+	result.SessionID = result.Email + ":" + codify.SHA(result.SessionID+strconv.Itoa(rand.Intn(100000000)))
 	err = c.Update(bson.M{"email": result.Email}, result)
 
 	if err != nil {

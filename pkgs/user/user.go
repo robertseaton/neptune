@@ -1,10 +1,14 @@
 package user
 
-import(
-	"os"
+import (
 	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"net/http"
+	"os"
+	"strings"
+
+	"neptune/pkgs/cookies"
 )
 
 type User struct {
@@ -15,7 +19,7 @@ type User struct {
 
 // Creates an account and adds it to the Database
 func CreateAccount(usr *User) bool {
-	
+
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		fmt.Println(err)
@@ -33,6 +37,7 @@ func CreateAccount(usr *User) bool {
 
 // Checks if an account exists in the userbase.
 func DoesAccountExist(email string) bool {
+
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
@@ -89,33 +94,64 @@ func UpdateUser(usr *User) bool {
 	return true
 }
 
-func CreateUserFile(usrName string){
+// Loads users info - or supplys links to login or register
+func LoadUserInfo(title string, r *http.Request) (filename string, option []byte, usr []byte) {
 
-	file, err := os.Create("accounts/" + usrName + ".txt")			// creates a file with that usrName
-	if err != nil {	fmt.Printf("error createUserFile FIX")  }
+	if cookies.IsLoggedIn(r) {
+		cookie, _ := r.Cookie("SessionID")
+		z := strings.Split(cookie.Value, ":")
+		filename = "accounts/" + z[0]
+		usr = []byte("<a href='" + filename + "'>" + z[0] + "</a>: ")
+		option = []byte("<a href='/logout'>logout</a>")
+	} else {
+		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
+	}
 
-	s := usrName + ": "
+	filename = "web/" + title + ".txt"
 
+	// Adds link to profile if clicked.
+	file := strings.Split(title, "/")
+	if len(file) > 1 {
+		filename = "accounts/" + file[1] + ".profile"
+	}
+
+	return filename, option, usr
+
+}
+
+func CreateUserFile(usrName string) {
+
+	file, err := os.Create("accounts/" + usrName + ".profile") // creates a file with that usrName
+	if err != nil {
+		fmt.Println("Error creating user profile")
+	}
+
+	s := usrName + " welcome!<br>"
+	// TODO add a plugin to a database of books
 	file.WriteString(s)
 
 }
 
-func ReadUserFile(usrName string)(file *os.File){
+func ReadUserFile(usrName string) (file *os.File) {
 
 	file, err := os.Open(usrName)
-	if err != nil {	fmt.Printf("error readUserFile FIX")  }
+	if err != nil {
+		fmt.Printf("error readUserFile FIX")
+	}
 
 	return file
 
 }
 
-func AppendUserFile(usrName string){
+func AppendUserFile(usrName string) {
 
-	file, err:= os.OpenFile(usrName, os.O_WRONLY, 0666)
-	if err != nil {	fmt.Printf("error appendUserFile FIX")  }
+	file, err := os.OpenFile(usrName, os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("error appendUserFile FIX")
+	}
 
 	s := "nothing"
 
 	file.WriteString(s)
-	
+
 }
