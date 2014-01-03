@@ -127,6 +127,8 @@ func CreateUserFile(usrName string) {
 	}
 
 	s := usrName + " welcome!<br>"
+	s += "If you would like to add a book: "
+	s += "<a href='/add-book'>click here!</a>"
 	// TODO add a plugin to a database of books
 	file.WriteString(s)
 

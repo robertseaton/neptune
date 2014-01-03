@@ -13,6 +13,7 @@ import (
 	"neptune/pkgs/codify"
 	"neptune/pkgs/cookies"
 	"neptune/pkgs/user"
+	"neptune/pkgs/bkz"
 )
 
 type Page struct {
@@ -129,10 +130,47 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Adds a new book to the database/user
+func bookHandler(w http.ResponseWriter, r *http.Request) {
+
+//	cookie, err := r.Cookie("SessionID")
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+
+//	sessionID := cookie.Value
+
+//	z := strings.Split(sessionID, ":")
+//	email := z[0]
+
+	book := new(bkz.Book)
+	book.Title = r.FormValue("book")
+	book.Author = r.FormValue("author")
+	book.ISBN = r.FormValue("isbn")
+	book.Genre = r.FormValue("genre")
+
+	fmt.Println(book)
+
+	if len(book.Title) > 0 {
+		ok := bkz.CreateBook(book)
+		if ok {
+			// TODO add a better succuess page
+			http.Redirect(w, r, "/success", http.StatusFound)
+		} else {
+			// TODO add another error page
+			http.Redirect(w, r, "/failed", http.StatusFound)
+		}
+	} else {
+		viewHandler(w, r)
+	}
+}
+
 func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
+	http.HandleFunc("/add-book", bookHandler)
 	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
 }
