@@ -1,0 +1,8 @@
+<form>
+Book Name: <input type="text" name="book"><br>
+Author Name: <input type="text" name="author"><br>
+ISBN: <input type="number" name="isbn"><br>
+Genre: <input type="text" name="genre"><br>
+
+<input type="submit" value="Submit">
+</form>
