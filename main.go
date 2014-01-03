@@ -152,14 +152,14 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(book)
 
-	if len(book.Title) > 0 {
+	if len(book.Title) > 1 {
 		ok := bkz.CreateBook(book)
 		if ok {
 			// TODO add a better succuess page
-			http.Redirect(w, r, "/success", http.StatusFound)
+			http.Redirect(w, r, "/add-book-success", http.StatusFound)
 		} else {
 			// TODO add another error page
-			http.Redirect(w, r, "/failed", http.StatusFound)
+			http.Redirect(w, r, "/add-book-failed", http.StatusFound)
 		}
 	} else {
 		viewHandler(w, r)
