@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"neptune/pkgs/codify"
 	"neptune/pkgs/cookies"
@@ -36,7 +37,7 @@ func loadPage(title string, r *http.Request) (*Page, error) {
 
 // Shows a particular page
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-
+	
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title, r)
 
@@ -132,25 +133,12 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // Adds a new book to the database/user
 func bookHandler(w http.ResponseWriter, r *http.Request) {
-
-//	cookie, err := r.Cookie("SessionID")
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-
-//	sessionID := cookie.Value
-
-//	z := strings.Split(sessionID, ":")
-//	email := z[0]
-
+	
 	book := new(bkz.Book)
 	book.Title = r.FormValue("book")
 	book.Author = r.FormValue("author")
 	book.ISBN = r.FormValue("isbn")
 	book.Genre = r.FormValue("genre")
-
-	fmt.Println(book)
 
 	if len(book.Title) > 1 {
 		ok := bkz.CreateBook(book)
@@ -161,6 +149,19 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 			// TODO add another error page
 			http.Redirect(w, r, "/add-book-failed", http.StatusFound)
 		}
+
+		/* Add book to user file */
+		cookie, err := r.Cookie("SessionID")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		
+		sessionID := cookie.Value
+		z := strings.Split(sessionID, ":")
+		username := z[0]
+
+		user.UpdateCollection(username, book) // HAS TRUE/FALSE
 	} else {
 		viewHandler(w, r)
 	}

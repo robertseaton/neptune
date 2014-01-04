@@ -4,7 +4,6 @@ import (
 	
 	"fmt"
 	"labix.org/v2/mgo"
-//	"labix.org/v2/mgo/bson"
 
 )
 
@@ -27,6 +26,7 @@ func CreateBook(book *Book) bool {
 	}
 
 	c := session.DB("library").C("users")
+	//i := bson.NewObjectId()
 	err = c.Insert(*book)
 	if err != nil {
 		fmt.Println(err)

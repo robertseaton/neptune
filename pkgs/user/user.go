@@ -6,15 +6,18 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
+	"io"
 	"strings"
 
 	"neptune/pkgs/cookies"
+	"neptune/pkgs/bkz"
 )
 
 type User struct {
 	Email     string
 	Password  string
 	SessionID string
+	BookList []bkz.Book
 }
 
 // Creates an account and adds it to the Database
@@ -144,16 +147,59 @@ func ReadUserFile(usrName string) (file *os.File) {
 	return file
 
 }
+/** Checks if an book is in the users personal booklist
+ *  If the book was already in the collection false will be returned.
+**/
+func UpdateCollection(email string, book *bkz.Book) bool {
 
-func AppendUserFile(usrName string) {
+	isbn := book.ISBN
 
-	file, err := os.OpenFile(usrName, os.O_WRONLY, 0666)
+	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
-		fmt.Printf("error appendUserFile FIX")
+		panic(err)
 	}
 
-	s := "nothing"
+	usr := User{}
+	c := session.DB("test").C("users")
 
-	file.WriteString(s)
+	err = c.Find(bson.M{"email": email}).One(&usr)
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return false
+	} else {
+		for i := 0; i < len(usr.BookList); i++ {
+			if usr.BookList[i].ISBN == isbn {
+				fmt.Errorf(err.Error())
+				return false
+			}
+		}
+	}
+	usr.BookList = append(usr.BookList, *book)
+	UpdateUser(&usr)
+	return true
+}
+
+/* CURRENTLY DOES NOT WORK */
+func AppendUserFile(usrName string, input string) {
+
+	usrName = "accounts/" + usrName + ".profile"
+
+	f, err := os.OpenFile(usrName, os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Printf("error appendUserFile FIX: OpenFile\n")
+		fmt.Printf(err.Error())
+	}
+
+	input += "<br>\n"
+
+	fmt.Println(input)
+
+	_, err = io.WriteString(f, input)
+
+//	if err != nil {
+//		fmt.Printf("error appendUserFile: WritingString\n")
+//		fmt.Printf(err.Error())
+//	}
+	f.Close()
 
 }
