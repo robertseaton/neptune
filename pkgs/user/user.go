@@ -17,7 +17,7 @@ type User struct {
 	Email     string
 	Password  string
 	SessionID string
-	BookList []bkz.BookId
+	BookList []string
 }
 
 // Creates an account and adds it to the Database
@@ -153,7 +153,7 @@ func ReadUserFile(usrName string) (file *os.File) {
 **/
 func UpdateCollection(email string, book *bkz.Book) bool {
 
-	id := book.Id.BookId
+	id := book.Id
 
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
@@ -169,7 +169,7 @@ func UpdateCollection(email string, book *bkz.Book) bool {
 		return false
 	} else {
 		for i := 0; i < len(usr.BookList); i++ {
-			if usr.BookList[i].BookId == id {
+			if usr.BookList[i] == id {
 				return false
 			}
 		}

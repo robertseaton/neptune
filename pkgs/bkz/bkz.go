@@ -8,22 +8,13 @@ import (
 
 )
 
-// This Id will be set at some point,
-// it will requre a function and probably 
-// be something like isbn + author +  edition + genre.
-type BookId struct {
-
-	BookId string
-
-} 
-
 type Book struct {
 
 	Title string
 	Author string
 	ISBN string
 	Genre string
-	Id BookId
+	Id string
 
 }
 
@@ -39,11 +30,12 @@ func CreateBook(book *Book) bool {
 	c := session.DB("library").C("users")
 	result := Book{}
 	err = c.Find(bson.M{"id": book.Id}).One(&result)
-	if err != nil {
+	if result.Id != "" {
 		// return true because book is present in the database
 		// and we can say, "it's been added" without causing errors
 		return true
 	}
+	fmt.Println(book)
 
 	err = c.Insert(*book)
 

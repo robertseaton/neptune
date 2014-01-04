@@ -140,9 +140,9 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 	book.ISBN = r.FormValue("isbn")
 	book.Genre = r.FormValue("genre")
 	// TODO improve bookId, isbn is being used for testing
-	book.Id.BookId = book.ISBN
+	book.Id = book.ISBN + book.Title
 
-	if len(book.Title) > 1 {
+	if len(book.Title) > 0 {
 		ok := bkz.CreateBook(book)
 		if ok {
 			// TODO add a better succuess page
