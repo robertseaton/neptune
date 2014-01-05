@@ -6,7 +6,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
-	"io"
 	"strings"
 
 	"neptune/pkgs/cookies"
@@ -57,23 +56,34 @@ func DoesAccountExist(email string) bool {
 	return true
 }
 
-// Checks to assure credientials
-func CheckCredentials(email string, password string) bool {
+func FindUser(email string) (userProfile *User){
 
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
 	}
-
-	result := User{}
+	
 	c := session.DB("test").C("users")
-
-	err = c.Find(bson.M{"email": email}).One(&result)
+	
+	err = c.Find(bson.M{"email": email}).One(&userProfile)
 	if err != nil {
+		return nil
+	}
+	
+	return userProfile
+
+}
+
+// Checks to assure credientials
+func CheckCredentials(email string, password string) bool {
+
+	userProfile := FindUser(email)
+
+	if userProfile == nil {
 		return false
 	}
 
-	if result.Password == password && result.Email == email {
+	if userProfile.Password == password && userProfile.Email == email {
 		return true
 	}
 
@@ -108,18 +118,7 @@ func LoadUserInfo(title string, r *http.Request) (filename string, option []byte
 		usr = []byte("<a href='" + filename + "'>" + z[0] + "</a>: ")
 		option = []byte("<a href='/logout'>logout</a>")
 	
-		/* TODO a large part of this code is used many times, 
-         * seprate functions may be used to clean this up.
-         */
-		session, err := mgo.Dial("127.0.0.1:27017/")
-		if err != nil {
-			panic(err)
-		}
-		
-		userProfile := User{}
-		c := session.DB("test").C("users")
-		
-		err = c.Find(bson.M{"email": z[0]}).One(&userProfile)
+		userProfile := FindUser(z[0])
 
 		str := "Most 5 recent books: <br>"
 		
@@ -179,33 +178,24 @@ func UpdateCollection(email string, book *bkz.Book) bool {
 
 	id := book.Id
 
-	session, err := mgo.Dial("127.0.0.1:27017/")
-	if err != nil {
-		panic(err)
-	}
+	userProfile := FindUser(email)
 
-	usr := User{}
-	c := session.DB("test").C("users")
-
-	err = c.Find(bson.M{"email": email}).One(&usr)
-	if err != nil {
-		fmt.Errorf(err.Error())
+	if userProfile == nil {
+		//fmt.Errorf(err.Error())
 		return false
 	} else {
-		for i := 0; i < len(usr.BookList); i++ {
-			if usr.BookList[i] == id {
+		for i := 0; i < len(userProfile.BookList); i++ {
+			if userProfile.BookList[i] == id {
 				return false
 			}
 		}
 	}
-	fmt.Println(usr.BookList)
-	usr.BookList = append(usr.BookList, (*book).Id)
-	UpdateUser(&usr)
-	fmt.Println(usr.BookList)
+	userProfile.BookList = append(userProfile.BookList, (*book).Id)
+	UpdateUser(userProfile)
 	return true
 }
 
-/* CURRENTLY DOES NOT WORK */
+/* CURRENTLY DOES NOT WORK 
 func AppendUserFile(usrName string, input string) {
 
 	usrName = "accounts/" + usrName + ".profile"
@@ -228,4 +218,4 @@ func AppendUserFile(usrName string, input string) {
 //	}
 	f.Close()
 
-}
+}*/
