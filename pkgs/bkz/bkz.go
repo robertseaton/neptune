@@ -4,6 +4,7 @@ import (
 	
 	"fmt"
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 
 )
 
@@ -13,8 +14,9 @@ type Book struct {
 	Author string
 	ISBN string
 	Genre string
+	Id string
 
-} 
+}
 
 // Creates an account and adds it to the Database
 func CreateBook(book *Book) bool {
@@ -26,10 +28,18 @@ func CreateBook(book *Book) bool {
 	}
 
 	c := session.DB("library").C("users")
-	//i := bson.NewObjectId()
+	result := Book{}
+	err = c.Find(bson.M{"id": book.Id}).One(&result)
+	if result.Id != "" {
+		// return true because book is present in the database
+		// and we can say, "it's been added" without causing errors
+		return true
+	}
+	fmt.Println(book)
+
 	err = c.Insert(*book)
+
 	if err != nil {
-		fmt.Println(err)
 		return false
 	}
 	return true

@@ -139,8 +139,10 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 	book.Author = r.FormValue("author")
 	book.ISBN = r.FormValue("isbn")
 	book.Genre = r.FormValue("genre")
+	// TODO improve bookId, isbn is being used for testing
+	book.Id = book.ISBN + book.Title
 
-	if len(book.Title) > 1 {
+	if len(book.Title) > 0 {
 		ok := bkz.CreateBook(book)
 		if ok {
 			// TODO add a better succuess page
@@ -150,18 +152,19 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/add-book-failed", http.StatusFound)
 		}
 
-		/* Add book to user file */
-		cookie, err := r.Cookie("SessionID")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		/** TODO:
+          * Add book to user file
+          * Potentially could make this a seperate function 
+          * Since it is used 3 or 4 times in this code
+         **/
+		cookie, _ := r.Cookie("SessionID")
 		
 		sessionID := cookie.Value
 		z := strings.Split(sessionID, ":")
 		username := z[0]
 
-		user.UpdateCollection(username, book) // HAS TRUE/FALSE
+		// HAS TRUE/FALSE 
+		user.UpdateCollection(username, book) 
 	} else {
 		viewHandler(w, r)
 	}
