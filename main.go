@@ -21,18 +21,19 @@ type Page struct {
 	Title    string
 	Body     template.HTML
 	UserData template.HTML
+	Bar      template.HTML
 }
 
 // Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
 
-	filename, option, usr := user.LoadUserInfo(title, r)
+	filename, option, usr, bar := user.LoadUserInfo(title, r)
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Page{Title: title, Body: template.HTML(body), UserData: (template.HTML(usr) + template.HTML(option))}, nil
+	return &Page{Title: title, Body: template.HTML(body), UserData: (template.HTML(usr) + template.HTML(option)), Bar: template.HTML(bar)}, nil
 }
 
 // Shows a particular page
@@ -60,11 +61,24 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
 
+	/* TODO will become seprate function, replace at some point */
+	session, err := mgo.Dial("127.0.0.1:27017/")
+	if err != nil {
+		panic(err)
+	}
+	
+	userProfile := new(user.User)
+	c := session.DB("test").C("users")
+	
+	err = c.Find(bson.M{"email": usr.Email}).One(&userProfile)
+	// check for error
+
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
 		ok := user.CheckCredentials(usr.Email, usr.Password)
 		if ok {
-			user.CreateUserFile(usr.Email)
+			usr = userProfile
+			user.CreateUserFile(usr.Email) // TODO: Createuserfile?
 			cookie := cookies.LoginCookie(usr.Email)
 			http.SetCookie(w, &cookie)
 			usr.SessionID = cookie.Value

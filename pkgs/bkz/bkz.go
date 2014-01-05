@@ -35,7 +35,6 @@ func CreateBook(book *Book) bool {
 		// and we can say, "it's been added" without causing errors
 		return true
 	}
-	fmt.Println(book)
 
 	err = c.Insert(*book)
 
@@ -43,4 +42,20 @@ func CreateBook(book *Book) bool {
 		return false
 	}
 	return true
+}
+
+func FindBook(bookid string) (book *Book) {
+
+	session, err := mgo.Dial("127.0.0.1:27017/")
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	
+	// Should probably change "users" to "books"
+	c := session.DB("library").C("users")
+	err = c.Find(bson.M{"id": bookid}).One(&book)
+
+	return book
+
 }

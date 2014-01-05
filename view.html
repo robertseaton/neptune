@@ -16,8 +16,8 @@ body {
 	
 	font-family:"Times New Roman";
 	font-size:20px;
-} 
-div {
+
+} div {
 
 	position:absolute;
 	display:inline;
@@ -30,6 +30,19 @@ div {
 	margin-left: 80%;
 	right:20px;
 
+} sidebar {
+
+   position:absolute;
+	display:inline;
+	text-align:left;
+	border:2px solid #a1a1a1;
+	padding:5px 20px; 
+	background:#dddddd;
+	width:120px;
+    height: 300px;
+	border-radius:25px;
+	right:20px;
+
 }
 </style>
 
@@ -38,6 +51,9 @@ div {
 <div>{{.UserData}}</div>
 <h1>{{.Title}}</h1>
 </head>
+<sidebar>
+{{.Bar}}
+</sidebar>
 <br>
 <body>
 {{.Body}}

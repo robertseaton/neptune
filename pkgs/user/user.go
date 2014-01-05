@@ -98,14 +98,38 @@ func UpdateUser(usr *User) bool {
 }
 
 // Loads users info - or supplys links to login or register
-func LoadUserInfo(title string, r *http.Request) (filename string, option []byte, usr []byte) {
+func LoadUserInfo(title string, r *http.Request) (filename string, option []byte, usr []byte, bar []byte) {
 
 	if cookies.IsLoggedIn(r) {
+		
 		cookie, _ := r.Cookie("SessionID")
 		z := strings.Split(cookie.Value, ":")
 		filename = "accounts/" + z[0]
 		usr = []byte("<a href='" + filename + "'>" + z[0] + "</a>: ")
 		option = []byte("<a href='/logout'>logout</a>")
+	
+		/* TODO a large part of this code is used many times, 
+         * seprate functions may be used to clean this up.
+         */
+		session, err := mgo.Dial("127.0.0.1:27017/")
+		if err != nil {
+			panic(err)
+		}
+		
+		userProfile := User{}
+		c := session.DB("test").C("users")
+		
+		err = c.Find(bson.M{"email": z[0]}).One(&userProfile)
+
+		str := "Most 5 recent books: <br>"
+		
+		for i := 0; i < len(userProfile.BookList) || i > 5; i++ {
+			book := bkz.FindBook(userProfile.BookList[i])
+			str += book.Title + "<br>"
+		}
+	  
+    	bar = []byte(str)
+
 	} else {
 		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
 	}
@@ -118,7 +142,7 @@ func LoadUserInfo(title string, r *http.Request) (filename string, option []byte
 		filename = "accounts/" + file[1] + ".profile"
 	}
 
-	return filename, option, usr
+	return filename, option, usr, bar
 
 }
 
@@ -174,8 +198,10 @@ func UpdateCollection(email string, book *bkz.Book) bool {
 			}
 		}
 	}
+	fmt.Println(usr.BookList)
 	usr.BookList = append(usr.BookList, (*book).Id)
 	UpdateUser(&usr)
+	fmt.Println(usr.BookList)
 	return true
 }
 
