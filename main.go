@@ -46,6 +46,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	z := strings.Split(title, "/")
 	if z[0] == "books" {
 		http.ServeFile(w, r, title)
+		return
 	}
 
 	if err != nil && !cookies.IsLoggedIn(r) {
@@ -150,7 +151,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 	book.ISBN = r.FormValue("isbn")
 	book.Genre = r.FormValue("genre")
 	// TODO improve bookId, isbn is being used for testing
-	book.Id = book.ISBN + book.Title
+	book.Id = book.ISBN
 
 	if len(book.Title) > 0 {
 		ok := bkz.CreateBook(book)
