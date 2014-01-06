@@ -121,12 +121,17 @@ func LoadUserInfo(title string, r *http.Request) (filename string, option []byte
 		userProfile := FindUser(z[0])
 
 		// Will need to change/add checkin function
-		str := "Book Collection (5 max): <br>"
-		
-		for i := 0; i < len(userProfile.BookList) || i > 5; i++ {
-			book := bkz.FindBook(userProfile.BookList[i])
-			link := "<a href='books/" + book.ISBN + ".pdf'>"
-			str +=  link + book.Title + "</a><br>"
+		str := "Book Collection: <br><br>"
+		// TODO instead of downloading it may make more sense to bring
+		// them to a page where they can view the books "info"
+		for i := 0; i < 5; i++ {
+			if  i < len(userProfile.BookList) {
+				book := bkz.FindBook(userProfile.BookList[i])
+				link := "<a href='books/" + book.ISBN + ".info'>"
+				str +=  link + book.Title + "</a><br><br>"
+			} else {
+				str += "<a href='/add-book.txt'>Add Book!</a><br><br>"
+			}
 		}
 	  
     	bar = []byte(str)
@@ -168,7 +173,6 @@ func ReadUserFile(usrName string) (file *os.File) {
 	if err != nil {
 		fmt.Printf("error readUserFile FIX")
 	}
-
 
 	return file
 

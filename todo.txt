@@ -10,3 +10,4 @@ TODO List for Neptune:
 * Create a salt for passwords
 * Tilize the body, give it a maximum width
 * POSSIBLY: Create a user.html template
+** Load a page of the books statistics when a person clicks on a book
