@@ -120,11 +120,13 @@ func LoadUserInfo(title string, r *http.Request) (filename string, option []byte
 	
 		userProfile := FindUser(z[0])
 
-		str := "Most 5 recent books: <br>"
+		// Will need to change/add checkin function
+		str := "Book Collection (5 max): <br>"
 		
 		for i := 0; i < len(userProfile.BookList) || i > 5; i++ {
 			book := bkz.FindBook(userProfile.BookList[i])
-			str += book.Title + "<br>"
+			link := "<a href='books/" + book.ISBN + ".pdf'>"
+			str +=  link + book.Title + "</a><br>"
 		}
 	  
     	bar = []byte(str)

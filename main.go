@@ -42,10 +42,16 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title, r)
 
+	// wonky TODO make better
+	z := strings.Split(title, "/")
+	if z[0] == "books" {
+		http.ServeFile(w, r, title)
+	}
+
 	if err != nil && !cookies.IsLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return
-	} else if err != nil {
+	} else if err != nil { // TODO check for possible bug here
 		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
@@ -60,18 +66,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
-
-	/* TODO will become seprate function, replace at some point */
-	session, err := mgo.Dial("127.0.0.1:27017/")
-	if err != nil {
-		panic(err)
-	}
-	
-	userProfile := new(user.User)
-	c := session.DB("test").C("users")
-	
-	err = c.Find(bson.M{"email": usr.Email}).One(&userProfile)
-	// check for error
+	userProfile := user.FindUser(usr.Email)
 
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
@@ -117,6 +112,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logs out the user, removes their cookie from the database
+// TODO: clean up this function
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := r.Cookie("SessionID")
@@ -166,13 +162,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/add-book-failed", http.StatusFound)
 		}
 
-		/** TODO:
-          * Add book to user file
-          * Potentially could make this a seperate function 
-          * Since it is used 3 or 4 times in this code
-         **/
 		cookie, _ := r.Cookie("SessionID")
-		
 		sessionID := cookie.Value
 		z := strings.Split(sessionID, ":")
 		username := z[0]
