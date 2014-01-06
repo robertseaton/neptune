@@ -1,0 +1,12 @@
+The constantly changing, neverending....
+
+TODO List for Neptune:
+
+* Add a book ranking system.
+* Enable a users homepage with books listed.
+* Allow users to mingle (e.g. friends list).
+* Add a "signup/login" with Facebook button.
+* Import Goodreads selection.
+* Create a salt for passwords
+* Tilize the body, give it a maximum width
+* POSSIBLY: Create a user.html template
