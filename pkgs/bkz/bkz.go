@@ -59,16 +59,3 @@ func FindBook(bookid string) (book *Book) {
 	return book
 
 }
-
-func ReadBook(bookid string) {
-
-}
-
-// <form method="get" action="file.doc">
-// <button type="submit">Download!</button>
-// </form>
-func DownloadBook(bookid string) {
-
-
-
-}
