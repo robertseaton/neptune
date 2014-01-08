@@ -168,8 +168,9 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 		z := strings.Split(sessionID, ":")
 		username := z[0]
 
-		// HAS TRUE/FALSE 
-		user.UpdateCollection(username, book) 
+		if !user.UpdateCollection(username, book) {
+			fmt.Println("The user: " + username + " does not exist!")
+		}
 	} else {
 		viewHandler(w, r)
 	}

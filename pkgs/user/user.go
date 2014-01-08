@@ -200,28 +200,3 @@ func UpdateCollection(email string, book *bkz.Book) bool {
 	UpdateUser(userProfile)
 	return true
 }
-
-/* CURRENTLY DOES NOT WORK 
-func AppendUserFile(usrName string, input string) {
-
-	usrName = "accounts/" + usrName + ".profile"
-
-	f, err := os.OpenFile(usrName, os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Printf("error appendUserFile FIX: OpenFile\n")
-		fmt.Printf(err.Error())
-	}
-
-	input += "<br>\n"
-
-	fmt.Println(input)
-
-	_, err = io.WriteString(f, input)
-
-//	if err != nil {
-//		fmt.Printf("error appendUserFile: WritingString\n")
-//		fmt.Printf(err.Error())
-//	}
-	f.Close()
-
-}*/
