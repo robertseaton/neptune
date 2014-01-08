@@ -52,7 +52,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil && !cookies.IsLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return
-	} else if err != nil { // TODO check for possible bug here
+	} else if err != nil { 
 		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
