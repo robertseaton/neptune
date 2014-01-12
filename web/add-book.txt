@@ -1,3 +1,4 @@
+# TODO make form more sutible, multiple authors, dates, and whatnot
 <form>
 Book Name: <input type="text" name="book"><br>
 Author Name: <input type="text" name="author"><br>
