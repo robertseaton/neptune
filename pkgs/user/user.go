@@ -6,7 +6,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
-	"io"
 	"strings"
 
 	"neptune/pkgs/cookies"
@@ -57,23 +56,34 @@ func DoesAccountExist(email string) bool {
 	return true
 }
 
-// Checks to assure credientials
-func CheckCredentials(email string, password string) bool {
+func FindUser(email string) (userProfile *User){
 
 	session, err := mgo.Dial("127.0.0.1:27017/")
 	if err != nil {
 		panic(err)
 	}
-
-	result := User{}
+	
 	c := session.DB("test").C("users")
-
-	err = c.Find(bson.M{"email": email}).One(&result)
+	
+	err = c.Find(bson.M{"email": email}).One(&userProfile)
 	if err != nil {
+		return nil
+	}
+	
+	return userProfile
+
+}
+
+// Checks to assure credientials
+func CheckCredentials(email string, password string) bool {
+
+	userProfile := FindUser(email)
+
+	if userProfile == nil {
 		return false
 	}
 
-	if result.Password == password && result.Email == email {
+	if userProfile.Password == password && userProfile.Email == email {
 		return true
 	}
 
@@ -98,14 +108,34 @@ func UpdateUser(usr *User) bool {
 }
 
 // Loads users info - or supplys links to login or register
-func LoadUserInfo(title string, r *http.Request) (filename string, option []byte, usr []byte) {
+func LoadUserInfo(title string, r *http.Request) (filename string, option []byte, usr []byte, bar []byte) {
 
 	if cookies.IsLoggedIn(r) {
+		
 		cookie, _ := r.Cookie("SessionID")
 		z := strings.Split(cookie.Value, ":")
 		filename = "accounts/" + z[0]
 		usr = []byte("<a href='" + filename + "'>" + z[0] + "</a>: ")
 		option = []byte("<a href='/logout'>logout</a>")
+	
+		userProfile := FindUser(z[0])
+
+		// Will need to change/add checkin function
+		str := "Book Collection: <br><br>"
+		// TODO instead of downloading it may make more sense to bring
+		// them to a page where they can view the books "info"
+		for i := 0; i < 5; i++ {
+			if  i < len(userProfile.BookList) {
+				book := bkz.FindBook(userProfile.BookList[i])
+				link := "<a href='books/" + book.ISBN + ".info'>"
+				str +=  link + book.Title + "</a><br><br>"
+			} else {
+				str += "<a href='/add-book.txt'>Add Book!</a><br><br>"
+			}
+		}
+	  
+    	bar = []byte(str)
+
 	} else {
 		option = []byte("<a href='/login'>login</a> or <a href='/register'>register</a>")
 	}
@@ -118,7 +148,7 @@ func LoadUserInfo(title string, r *http.Request) (filename string, option []byte
 		filename = "accounts/" + file[1] + ".profile"
 	}
 
-	return filename, option, usr
+	return filename, option, usr, bar
 
 }
 
@@ -144,7 +174,6 @@ func ReadUserFile(usrName string) (file *os.File) {
 		fmt.Printf("error readUserFile FIX")
 	}
 
-
 	return file
 
 }
@@ -155,51 +184,19 @@ func UpdateCollection(email string, book *bkz.Book) bool {
 
 	id := book.Id
 
-	session, err := mgo.Dial("127.0.0.1:27017/")
-	if err != nil {
-		panic(err)
-	}
+	userProfile := FindUser(email)
 
-	usr := User{}
-	c := session.DB("test").C("users")
-
-	err = c.Find(bson.M{"email": email}).One(&usr)
-	if err != nil {
-		fmt.Errorf(err.Error())
+	if userProfile == nil {
+		//fmt.Errorf(err.Error())
 		return false
 	} else {
-		for i := 0; i < len(usr.BookList); i++ {
-			if usr.BookList[i] == id {
+		for i := 0; i < len(userProfile.BookList); i++ {
+			if userProfile.BookList[i] == id {
 				return false
 			}
 		}
 	}
-	usr.BookList = append(usr.BookList, (*book).Id)
-	UpdateUser(&usr)
+	userProfile.BookList = append(userProfile.BookList, (*book).Id)
+	UpdateUser(userProfile)
 	return true
-}
-
-/* CURRENTLY DOES NOT WORK */
-func AppendUserFile(usrName string, input string) {
-
-	usrName = "accounts/" + usrName + ".profile"
-
-	f, err := os.OpenFile(usrName, os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Printf("error appendUserFile FIX: OpenFile\n")
-		fmt.Printf(err.Error())
-	}
-
-	input += "<br>\n"
-
-	fmt.Println(input)
-
-	_, err = io.WriteString(f, input)
-
-//	if err != nil {
-//		fmt.Printf("error appendUserFile: WritingString\n")
-//		fmt.Printf(err.Error())
-//	}
-	f.Close()
-
 }

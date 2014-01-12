@@ -21,18 +21,19 @@ type Page struct {
 	Title    string
 	Body     template.HTML
 	UserData template.HTML
+	Bar      template.HTML
 }
 
 // Loads a page for use
 func loadPage(title string, r *http.Request) (*Page, error) {
 
-	filename, option, usr := user.LoadUserInfo(title, r)
+	filename, option, usr, bar := user.LoadUserInfo(title, r)
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Page{Title: title, Body: template.HTML(body), UserData: (template.HTML(usr) + template.HTML(option))}, nil
+	return &Page{Title: title, Body: template.HTML(body), UserData: (template.HTML(usr) + template.HTML(option)), Bar: template.HTML(bar)}, nil
 }
 
 // Shows a particular page
@@ -41,10 +42,17 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
 	p, err := loadPage(title, r)
 
+	// wonky TODO make better
+	z := strings.Split(title, "/")
+	if z[0] == "books" {
+		http.ServeFile(w, r, title)
+		return
+	}
+
 	if err != nil && !cookies.IsLoggedIn(r) {
 		http.Redirect(w, r, "/home", http.StatusFound)
 		return
-	} else if err != nil {
+	} else if err != nil { 
 		http.Redirect(w, r, "/login-succeeded", http.StatusFound)
 		return
 	}
@@ -59,12 +67,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	usr := new(user.User)
 	usr.Email = r.FormValue("email")
 	pass := r.FormValue("pwd")
+	userProfile := user.FindUser(usr.Email)
 
 	if len(pass) > 0 {
 		usr.Password = codify.SHA(pass)
 		ok := user.CheckCredentials(usr.Email, usr.Password)
 		if ok {
-			user.CreateUserFile(usr.Email)
+			usr = userProfile
+			user.CreateUserFile(usr.Email) // TODO: Createuserfile?
 			cookie := cookies.LoginCookie(usr.Email)
 			http.SetCookie(w, &cookie)
 			usr.SessionID = cookie.Value
@@ -103,6 +113,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logs out the user, removes their cookie from the database
+// TODO: clean up this function
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := r.Cookie("SessionID")
@@ -140,7 +151,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 	book.ISBN = r.FormValue("isbn")
 	book.Genre = r.FormValue("genre")
 	// TODO improve bookId, isbn is being used for testing
-	book.Id = book.ISBN + book.Title
+	book.Id = book.ISBN
 
 	if len(book.Title) > 0 {
 		ok := bkz.CreateBook(book)
@@ -152,19 +163,14 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/add-book-failed", http.StatusFound)
 		}
 
-		/** TODO:
-          * Add book to user file
-          * Potentially could make this a seperate function 
-          * Since it is used 3 or 4 times in this code
-         **/
 		cookie, _ := r.Cookie("SessionID")
-		
 		sessionID := cookie.Value
 		z := strings.Split(sessionID, ":")
 		username := z[0]
 
-		// HAS TRUE/FALSE 
-		user.UpdateCollection(username, book) 
+		if !user.UpdateCollection(username, book) {
+			fmt.Println("The user: " + username + " does not exist!")
+		}
 	} else {
 		viewHandler(w, r)
 	}

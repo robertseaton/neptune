@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
-
-<style>
+  
+ <style>
 body {
 
 	background-color:#d0e4fe;
-	text-align:center;
+    margin: 0 auto;
+	text-align:center; 
+	width: 350px;
 
 } h1 {
 
@@ -16,18 +18,31 @@ body {
 	
 	font-family:"Times New Roman";
 	font-size:20px;
-} 
-div {
+
+} div {
 
 	position:absolute;
 	display:inline;
-	text-align:left;
+	text-align:center;
 	border:2px solid #a1a1a1;
 	padding:10px 30px; 
 	background:#dddddd;
 	width:100px;
 	border-radius:25px;
-	margin-left: 80%;
+    margin-left: 80%;
+    right:20px;
+
+} sidebar {
+
+    position:absolute;
+	display:inline;
+	text-align:left;
+	border:2px solid #a1a1a1;
+	padding:10px 10px; 
+	background:#dddddd;
+	width:140px;
+    height: 300px;
+	border-radius:25px;
 	right:20px;
 
 }
@@ -38,6 +53,9 @@ div {
 <div>{{.UserData}}</div>
 <h1>{{.Title}}</h1>
 </head>
+<sidebar>
+{{.Bar}}
+</sidebar>
 <br>
 <body>
 {{.Body}}
