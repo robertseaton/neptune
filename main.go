@@ -10,10 +10,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"neptune/pkgs/codify"
-	"neptune/pkgs/cookies"
-	"neptune/pkgs/user"
-	"neptune/pkgs/bkz"
+	"github.com/robertseaton/neptune/pkgs/bkz"
+	"github.com/robertseaton/neptune/pkgs/codify"
+	"github.com/robertseaton/neptune/pkgs/cookies"
+	"github.com/robertseaton/neptune/pkgs/user"
 )
 
 type Page struct {
@@ -133,16 +133,16 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 // Adds a new book to the database/user
 func bookHandler(w http.ResponseWriter, r *http.Request) {
 
-//	cookie, err := r.Cookie("SessionID")
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
+	//	cookie, err := r.Cookie("SessionID")
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		return
+	//	}
 
-//	sessionID := cookie.Value
+	//	sessionID := cookie.Value
 
-//	z := strings.Split(sessionID, ":")
-//	email := z[0]
+	//	z := strings.Split(sessionID, ":")
+	//	email := z[0]
 
 	book := new(bkz.Book)
 	book.Title = r.FormValue("book")

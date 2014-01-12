@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"neptune/pkgs/cookies"
+	"github.com/robertseaton/neptune/pkgs/cookies"
 )
 
 type User struct {

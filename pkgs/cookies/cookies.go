@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"neptune/pkgs/codify"
+	"github.com/robertseaton/neptune/pkgs/codify"
 )
 
 type User struct {
